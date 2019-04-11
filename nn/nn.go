@@ -46,7 +46,7 @@ func NewNN(structure []int, inputs int) *NN {
 	for i := range structure {
 		r.layers[i].biases = *matrix.NewMatrix(1, structure[i], func() float64 { return 0.01 })
 		s2 := append([]int{inputs}, structure...)
-		r.layers[i].weights = *matrix.NewMatrix(s2[i], structure[i], func() float64 { return genBasic(s2[i], structure[i]) }) // Uses Xavier initialization
+		r.layers[i].weights = *matrix.NewMatrix(s2[i], structure[i], func() float64 { return genXav(s2[i], structure[i]) }) // Uses Xavier initialization
 
 	}
 	return &r
@@ -59,7 +59,7 @@ func genXav(prev int, curr int) float64 {
 }
 
 func genBasic(prev int, curr int) float64 {
-	return 1.5
+	return 1.1
 }
 
 // ResetActivations resets Activations and z and partials
@@ -110,20 +110,32 @@ func (n NN) GetCost(expected []float64) float64 {
 	finallayer := n.layers[lenght-1].Activations[0]
 	r := 0.0
 	for i := range expected {
-		r += math.Pow(finallayer[i]-expected[i], 2)
+		r += math.Pow(Sigmoid(finallayer[i])-expected[i], 2)
 	}
 	return r
 }
 
-//Backpropogate fills the partial derivatives yeet
-func (n *NN) Backpropogate(inputs []float64, expected []float64) {
+//Sigmoid takes the sigmoid
+func Sigmoid(x float64) float64 {
+	return 1.0 / (1.0 + math.Exp(-x))
+}
+
+//SigDeriv returns deriv of sig of x
+func SigDeriv(x float64) float64 {
+	return Sigmoid(x) * (1.0 - Sigmoid(x))
+}
+
+//Backpropogate fills the partial derivatives and returns the loss
+func (n *NN) Backpropogate(inputs []float64, expected []float64) float64 {
 	(*n).ResetPartials()
-	//C := cost
+	cost := (*n).GetCost(expected)
+	fmt.Println(cost)
 	//Do the last layer partial derivatives
 	//Create dActi and dZ
 	lenght := len(n.layers)
 	expectedMatrix := matrix.AtoM(expected)
-	(*n).layers[lenght-1].dActivations = ((*n).layers[lenght-1].Activations.Sub(expectedMatrix)).Multiply(2.0)
+	expectedSigmoidMatrix := expectedMatrix.Apply(Sigmoid)
+	(*n).layers[lenght-1].dActivations = ((*n).layers[lenght-1].Activations.Sub(expectedSigmoidMatrix)).Multiply(2.0).WeirdMult(expectedMatrix.Apply(SigDeriv))
 	(*n).layers[lenght-1].dZ = ((n).layers[lenght-1].Z.Apply(DReLU)).WeirdMult((*n).layers[lenght-1].dActivations)
 	(*n).layers[lenght-1].dBiases = (*n).layers[lenght-1].dZ
 	if lenght != 1 {
@@ -141,6 +153,7 @@ func (n *NN) Backpropogate(inputs []float64, expected []float64) {
 			(*n).layers[0].dWeights = matrix.Broadcast(matrix.AtoM(inputs), len((*n).layers[0].weights[0])).DZdW((*n).layers[0].dZ)
 		}
 	}
+	return cost
 }
 
 // DReLU is the relu deriv
@@ -149,4 +162,10 @@ func DReLU(i float64) float64 {
 		return 1.0
 	}
 	return 0.0
+}
+
+// Train props then backprops and then updates gradients
+func (n *NN) Train(inputs [][]float64, expecteds [][]float64) {
+	//num_samples := len(inputs)
+
 }
