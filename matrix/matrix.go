@@ -194,11 +194,11 @@ The dZcurr/dL is just
 	[[d+e, f+g, h+j]]
 */
 // DZdAPrev is the above, takes in the weights
-func DZdAPrev(weights Matrix) Matrix {
+func DZdAPrev(weights Matrix, dZ Matrix) Matrix {
 	r := NewMatrix(1, len(weights), Zeroes)
 	for row := range weights {
 		for column := range weights[row] {
-			(*r)[0][row] += weights[row][column]
+			(*r)[0][row] += weights[row][column] * dZ[0][column]
 		}
 	}
 	return *r
