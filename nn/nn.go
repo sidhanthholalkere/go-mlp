@@ -144,4 +144,18 @@ func (n *NN) Backpropogate(expected []float64){
 	(*n).layers[length-1].dActivations = matrix.MatMul(matrix.Sub(finalSigmoidedLayer, matrix.Matrix{expected}), finalSigmoidPrimeLayer).Multiply(2.0)
 	(*n).layers[length-1].dZ = matrix.MatMul((*n).layers[length-1].dActivations, matrix.Apply((*n).layers[length-1].dActivations, ReLUDeriv))
 	(*n).layers[length-1].dBiases = (*n).layers[length-1].dZ
+	(*n).layers[length-1].dWeights = DCDW((*n).layers[length-2].Activations, (*n).layers[length-1].dZ)
+	// The last layer is done, now on to the "backpropogating"
+}
+
+// DCDW is the partial derivative of cost with respect to a set of weights, it
+// depends on the previous activations, and the backpropd partials for DCDZ
+func DCDW(previous matrix.Matrix, partials matrix.Matrix) matrix.Matrix{
+	r := matrix.NewMatrix(previous.Columns(), partials.Columns(), matrix.Zeroes)
+	for row := range r{
+		for column := range r[row]{
+			r[row][column] = previous[0][row] * partials[0][column]
+		}
+	}
+	return r
 }
