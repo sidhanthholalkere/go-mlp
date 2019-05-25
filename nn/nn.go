@@ -135,6 +135,8 @@ func (n *NN) Backpropogate(expected []float64){
 	(*n).ResetPartials()
 	
 	// Backpropogate the last layer first
+	// Notes about how all of this was calculated in another document soon
+	// probably
 	cost := (*n).GetCost(expected)
 	fmt.Println("Cost: ", cost)
 	length := len((*n).layers)
@@ -146,6 +148,17 @@ func (n *NN) Backpropogate(expected []float64){
 	(*n).layers[length-1].dBiases = (*n).layers[length-1].dZ
 	(*n).layers[length-1].dWeights = DCDW((*n).layers[length-2].Activations, (*n).layers[length-1].dZ)
 	// The last layer is done, now on to the "backpropogating"
+	for lay := length-2; lay >= 0; lay--{
+		// now for each layer do the backprop
+		//currentLayer := &(*n).layers[lay]
+		//nextLayer := &(*n).layers[lay+1]
+		// first find the DCDA, or partial derivative of the cost with
+		// respect to the layer's activations
+		// while the activations arent changed during gradient descent,
+		// its important to know the derivate for b a c k p r o p
+		//(*currentLayer).dActivations = DCDA((*nextLayer).weights, (*nextLayer).dZ) 
+		(*n).layers[lay].dActivations = DCDA((*n).layers[lay+1].weights, (*n).layers[lay+1].dZ)
+	}
 }
 
 // DCDW is the partial derivative of cost with respect to a set of weights, it
@@ -159,3 +172,17 @@ func DCDW(previous matrix.Matrix, partials matrix.Matrix) matrix.Matrix{
 	}
 	return r
 }
+
+// DCDA is the partial derivative of the cost with respect fo the activations,
+// it depends on weights its multiplied by and the partials of the
+// activation*weights
+func DCDA(weights matrix.Matrix, partials matrix.Matrix) matrix.Matrix{
+	r := matrix.NewMatrix(1, weights.Rows(), matrix.Zeroes)
+	for row := range r{
+		for column := range r[row]{
+			r[row][column] = matrix.ArrMult(partials[0], weights.GetRow(column))
+		}
+	}
+	return r
+}
+
