@@ -60,15 +60,6 @@ func ArrMult(a []float64, b []float64) float64 {
 	return r
 }
 
-// ArrSum sums 2 arrays and returns it
-func ArrSum(a []float64, b[]float64) []float64{
-	r := make([]float64, len(a))
-	for i := range r{
-		r[i] = a[i] + b[i]
-	}
-	return r
-}
-
 // GetRow returns a row from a matrix
 func (m Matrix) GetRow(idx int) []float64 {
 	return m[idx]

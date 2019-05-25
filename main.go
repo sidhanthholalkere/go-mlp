@@ -13,7 +13,7 @@ func main() {
 	inputs := []float64{1.5, 2.5}
 	outputs := []float64{1, 0}
 	Avery.Propogate(inputs)
-	Avery.Backpropogate(outputs)
+	Avery.Backpropogate(outputs, inputs)
 	Avery.Print()
 	cost := Avery.GetCost(outputs)
 	fmt.Println("Cost: ", cost)

@@ -131,7 +131,7 @@ func ReLUDeriv(x float64) float64 {
 	return 0.0
 }
 
-func (n *NN) Backpropogate(expected []float64){
+func (n *NN) Backpropogate(expected []float64, inputs []float64){
 	(*n).ResetPartials()
 	
 	// Backpropogate the last layer first
@@ -144,20 +144,28 @@ func (n *NN) Backpropogate(expected []float64){
 	finalSigmoidedLayer :=  matrix.Apply(finalLayer, Sigmoid)
 	finalSigmoidPrimeLayer := matrix.Apply(finalLayer, SigDeriv)
 	(*n).layers[length-1].dActivations = matrix.MatMul(matrix.Sub(finalSigmoidedLayer, matrix.Matrix{expected}), finalSigmoidPrimeLayer).Multiply(2.0)
-	(*n).layers[length-1].dZ = matrix.MatMul((*n).layers[length-1].dActivations, matrix.Apply((*n).layers[length-1].dActivations, ReLUDeriv))
+	(*n).layers[length-1].dZ = matrix.MatMul((*n).layers[length-1].dActivations, matrix.Apply((*n).layers[length-1].Activations, ReLUDeriv))
 	(*n).layers[length-1].dBiases = (*n).layers[length-1].dZ
 	(*n).layers[length-1].dWeights = DCDW((*n).layers[length-2].Activations, (*n).layers[length-1].dZ)
 	// The last layer is done, now on to the "backpropogating"
 	for lay := length-2; lay >= 0; lay--{
 		// now for each layer do the backprop
-		//currentLayer := &(*n).layers[lay]
-		//nextLayer := &(*n).layers[lay+1]
+		currentLayer := &(*n).layers[lay]
+		nextLayer := &(*n).layers[lay+1]
 		// first find the DCDA, or partial derivative of the cost with
 		// respect to the layer's activations
 		// while the activations arent changed during gradient descent,
 		// its important to know the derivate for b a c k p r o p
-		//(*currentLayer).dActivations = DCDA((*nextLayer).weights, (*nextLayer).dZ) 
-		(*n).layers[lay].dActivations = DCDA((*n).layers[lay+1].weights, (*n).layers[lay+1].dZ)
+		(*currentLayer).dActivations = DCDA((*nextLayer).weights, (*nextLayer).dZ)
+		(*currentLayer).dZ = matrix.MatMul((*currentLayer).dActivations, matrix.Apply((*currentLayer).Activations, ReLUDeriv))
+		(*currentLayer).dBiases = (*currentLayer).dZ
+		// now for dWeights if its layer 0, you use inputs as
+		// previous activations
+		if lay == 0 {
+			(*currentLayer).dWeights = DCDW(matrix.Matrix{inputs}, (*currentLayer).dZ)
+		} else {
+			(*currentLayer).dWeights = DCDW((*n).layers[lay-1].Activations, (*currentLayer).dZ)
+		}
 	}
 }
 
