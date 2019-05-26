@@ -46,7 +46,7 @@ func NewNN(structure []int, inputs int) *NN {
 	for i := range structure {
 		r.layers[i].biases = matrix.NewMatrix(1, structure[i], func() float64 { return 0.0 })
 		s2 := append([]int{inputs}, structure...)
-		r.layers[i].weights = matrix.NewMatrix(s2[i], structure[i], func() float64 { return genTest(s2[i], structure[i]) }) // Uses Xavier initialization
+		r.layers[i].weights = matrix.NewMatrix(s2[i], structure[i], func() float64 { return genXav(s2[i], structure[i]) }) // Uses Xavier initialization
 
 	}
 	return &r
