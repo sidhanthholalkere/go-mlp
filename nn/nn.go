@@ -46,7 +46,7 @@ func NewNN(structure []int, inputs int) *NN {
 	for i := range structure {
 		r.layers[i].biases = matrix.NewMatrix(1, structure[i], func() float64 { return 0.0 })
 		s2 := append([]int{inputs}, structure...)
-		r.layers[i].weights = matrix.NewMatrix(s2[i], structure[i], func() float64 { return genTest(s2[i], structure[i]) }) // Uses Xavier initialization
+		r.layers[i].weights = matrix.NewMatrix(s2[i], structure[i], func() float64 { return genXav(s2[i], structure[i]) }) // Uses Xavier initialization
 
 	}
 	return &r
@@ -138,8 +138,8 @@ func (n *NN) Backpropogate(expected []float64, inputs []float64) {
 	// Backpropogate the last layer first
 	// Notes about how all of this was calculated in another document soon
 	// probably
-	cost := (*n).GetCost(expected)
-	fmt.Println("Cost: ", cost)
+	//cost := (*n).GetCost(expected)
+	//fmt.Println("Cost: ", cost)
 	length := len((*n).layers)
 	finalLayer := (*n).layers[length-1].Activations
 	finalSigmoidedLayer := matrix.Apply(finalLayer, Sigmoid)
@@ -204,13 +204,14 @@ func (n *NN) Train(inputs [][]float64, expecteds [][]float64, lr float64) {
 	}
 
 	avgCost := 0.0
-
+	fmt.Println("batchsize: ", batchsize)
 	//Store the partials in an nn, add each time
 	totalPartials := make([]Layer, len((*n).layers))
 	for layer := range totalPartials {
-		totalPartials[layer].dBiases = matrix.NewMatrix(1, len((*n).layers[layer].dBiases[0]), matrix.Zeroes)
-		totalPartials[layer].dWeights = matrix.NewMatrix(len((*n).layers[layer].dBiases), len((*n).layers[layer].dBiases[0]), matrix.Zeroes)
+		totalPartials[layer].dBiases = matrix.NewMatrix(1, len((*n).layers[layer].biases[0]), matrix.Zeroes)
+		totalPartials[layer].dWeights = matrix.NewMatrix(len((*n).layers[layer].weights), len((*n).layers[layer].weights[0]), matrix.Zeroes)
 	}
+
 	for i := 0; i < batchsize; i++ {
 		// reset
 		(*n).ResetActivations()
@@ -219,6 +220,7 @@ func (n *NN) Train(inputs [][]float64, expecteds [][]float64, lr float64) {
 		(*n).Propogate(inputs[i])
 		avgCost += (*n).GetCost(expecteds[i])
 		(*n).Backpropogate(expecteds[i], inputs[i])
+		//fmt.Println((*n).layers[0].dWeights)
 		// add the partials to the total
 		for layer := range totalPartials {
 			totalPartials[layer].dBiases = matrix.Add(totalPartials[layer].dBiases, (*n).layers[layer].dBiases)
@@ -242,4 +244,5 @@ func (n *NN) Train(inputs [][]float64, expecteds [][]float64, lr float64) {
 		(*n).layers[layer].dBiases = matrix.Sub((*n).layers[layer].biases, totalPartials[layer].dBiases.Multiply(lr))
 	}
 	fmt.Println("Avg cost: ", avgCost)
+
 }

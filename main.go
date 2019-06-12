@@ -3,18 +3,27 @@ package main
 import (
 	"go-mlp/nn"
 	"math/rand"
-	"fmt"
 )
 
 func main() {
 	rand.Seed(1)
 
-	mlp := nn.NewNN([]int{3, 2}, 2)
-	inputs := []float64{1.5, 2.5}
-	outputs := []float64{1, 0}
-	mlp.Propogate(inputs)
-	mlp.Backpropogate(outputs, inputs)
+	inputs := [][]float64{
+		[]float64{1, 1},
+		[]float64{1, 0},
+		[]float64{0, 1},
+		[]float64{0, 0},
+	}
+	outputs := [][]float64{
+		[]float64{0},
+		[]float64{1},
+		[]float64{1},
+		[]float64{0},
+	}
+	mlp := nn.NewNN([]int{2, 1}, 2)
 	mlp.Print()
-	cost := mlp.GetCost(outputs)
-	fmt.Println("Cost: ", cost)
+	for i := 0; i < 100; i++ {
+		mlp.Train(inputs, outputs, 2.0)
+	}
+	mlp.Print()
 }
